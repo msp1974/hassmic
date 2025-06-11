@@ -1,7 +1,7 @@
 // exposes the microphone as a wyoming satellite
 import TcpSocket from 'react-native-tcp-socket';
 import {HMLogger} from './logger';
-import {APP_VERSION, AUDIO_INFO, MIC_GAIN, WYOMING_PORT} from './constants';
+import {APP_VERSION, AUDIO_INFO, WYOMING_PORT} from './constants';
 import {Settings} from './settings';
 import {PCMPlayer} from './pcm';
 import {
@@ -13,6 +13,7 @@ import {
 import {CheyenneSocket} from './cheyenne';
 import {DeviceEventEmitter} from 'react-native';
 import {UUIDManager} from './util';
+import SoundPlayer from 'react-native-sound-player';
 
 const Logger = new HMLogger('wyoming.ts');
 type CallbackType<T> = ((s: T) => void) | null;
@@ -555,6 +556,24 @@ class ClientHandler {
           break;
 
         case 'detection':
+          // Received a wakeword detection event
+          let ww = await Settings.getWakewordSound();
+          switch (ww) {
+            case 'Alexa':
+              SoundPlayer.playAsset(
+                require('./assets/sounds/alexa.mp3'),
+              );
+              break;
+            case 'Ding':
+              SoundPlayer.playAsset(require('./assets/sounds/ding.mp3'));
+              break;
+            case 'Bubble':
+              SoundPlayer.playAsset(require('./assets/sounds/bubble.mp3'));
+              break;
+            case 'HomeAssistant':
+              SoundPlayer.playAsset(require('./assets/sounds/havpe.mp3'));
+              break;
+          }
           break;
 
         case 'transcribe':

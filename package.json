@@ -4,6 +4,7 @@
     "@stardazed/streams-text-encoding": "^1.0.2",
     "react-native-fast-encoder": "^0.1.12",
     "react-native-fetch-api": "^3.0.0",
+    "react-native-sound-player": "^0.14.5",
     "web-streams-polyfill": "^4.0.0"
   },
   "devDependencies": {

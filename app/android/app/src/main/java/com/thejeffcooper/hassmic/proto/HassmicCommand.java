@@ -26,6 +26,7 @@ public  final class HassmicCommand extends
     SET_DEVICE_VOLUME(3),
     SET_PLAYER_VOLUME(4),
     COMMAND(5),
+    SET_WAKEWORD_SOUND(7),
     MSG_NOT_SET(0);
     private final int value;
     private MsgCase(int value) {
@@ -46,6 +47,7 @@ public  final class HassmicCommand extends
         case 3: return SET_DEVICE_VOLUME;
         case 4: return SET_PLAYER_VOLUME;
         case 5: return COMMAND;
+        case 7: return SET_WAKEWORD_SOUND;
         case 0: return MSG_NOT_SET;
         default: return null;
       }
@@ -399,6 +401,94 @@ public  final class HassmicCommand extends
       msgCase_ = 0;
       msg_ = null;
     }
+  }
+
+  public static final int SET_WAKEWORD_SOUND_FIELD_NUMBER = 7;
+  /**
+   * <pre>
+   * Wakeword
+   * </pre>
+   *
+   * <code>string set_wakeword_sound = 7;</code>
+   * @return Whether the setWakewordSound field is set.
+   */
+  @java.lang.Override
+  public boolean hasSetWakewordSound() {
+    return msgCase_ == 7;
+  }
+  /**
+   * <pre>
+   * Wakeword
+   * </pre>
+   *
+   * <code>string set_wakeword_sound = 7;</code>
+   * @return The setWakewordSound.
+   */
+  @java.lang.Override
+  public java.lang.String getSetWakewordSound() {
+    java.lang.String ref = "";
+    if (msgCase_ == 7) {
+      ref = (java.lang.String) msg_;
+    }
+    return ref;
+  }
+  /**
+   * <pre>
+   * Wakeword
+   * </pre>
+   *
+   * <code>string set_wakeword_sound = 7;</code>
+   * @return The bytes for setWakewordSound.
+   */
+  @java.lang.Override
+  public com.google.protobuf.ByteString
+      getSetWakewordSoundBytes() {
+    java.lang.String ref = "";
+    if (msgCase_ == 7) {
+      ref = (java.lang.String) msg_;
+    }
+    return com.google.protobuf.ByteString.copyFromUtf8(ref);
+  }
+  /**
+   * <pre>
+   * Wakeword
+   * </pre>
+   *
+   * <code>string set_wakeword_sound = 7;</code>
+   * @param value The setWakewordSound to set.
+   */
+  private void setSetWakewordSound(
+      java.lang.String value) {
+    java.lang.Class<?> valueClass = value.getClass();
+  msgCase_ = 7;
+    msg_ = value;
+  }
+  /**
+   * <pre>
+   * Wakeword
+   * </pre>
+   *
+   * <code>string set_wakeword_sound = 7;</code>
+   */
+  private void clearSetWakewordSound() {
+    if (msgCase_ == 7) {
+      msgCase_ = 0;
+      msg_ = null;
+    }
+  }
+  /**
+   * <pre>
+   * Wakeword
+   * </pre>
+   *
+   * <code>string set_wakeword_sound = 7;</code>
+   * @param value The bytes for setWakewordSound to set.
+   */
+  private void setSetWakewordSoundBytes(
+      com.google.protobuf.ByteString value) {
+    checkByteStringIsUtf8(value);
+    msg_ = value.toStringUtf8();
+    msgCase_ = 7;
   }
 
   public static final int INTERNAL_FIELD_NUMBER = 6;
@@ -880,6 +970,87 @@ public  final class HassmicCommand extends
     }
 
     /**
+     * <pre>
+     * Wakeword
+     * </pre>
+     *
+     * <code>string set_wakeword_sound = 7;</code>
+     * @return Whether the setWakewordSound field is set.
+     */
+    @java.lang.Override
+    public boolean hasSetWakewordSound() {
+      return instance.hasSetWakewordSound();
+    }
+    /**
+     * <pre>
+     * Wakeword
+     * </pre>
+     *
+     * <code>string set_wakeword_sound = 7;</code>
+     * @return The setWakewordSound.
+     */
+    @java.lang.Override
+    public java.lang.String getSetWakewordSound() {
+      return instance.getSetWakewordSound();
+    }
+    /**
+     * <pre>
+     * Wakeword
+     * </pre>
+     *
+     * <code>string set_wakeword_sound = 7;</code>
+     * @return The bytes for setWakewordSound.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getSetWakewordSoundBytes() {
+      return instance.getSetWakewordSoundBytes();
+    }
+    /**
+     * <pre>
+     * Wakeword
+     * </pre>
+     *
+     * <code>string set_wakeword_sound = 7;</code>
+     * @param value The setWakewordSound to set.
+     * @return This builder for chaining.
+     */
+    public Builder setSetWakewordSound(
+        java.lang.String value) {
+      copyOnWrite();
+      instance.setSetWakewordSound(value);
+      return this;
+    }
+    /**
+     * <pre>
+     * Wakeword
+     * </pre>
+     *
+     * <code>string set_wakeword_sound = 7;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearSetWakewordSound() {
+      copyOnWrite();
+      instance.clearSetWakewordSound();
+      return this;
+    }
+    /**
+     * <pre>
+     * Wakeword
+     * </pre>
+     *
+     * <code>string set_wakeword_sound = 7;</code>
+     * @param value The bytes for setWakewordSound to set.
+     * @return This builder for chaining.
+     */
+    public Builder setSetWakewordSoundBytes(
+        com.google.protobuf.ByteString value) {
+      copyOnWrite();
+      instance.setSetWakewordSoundBytes(value);
+      return this;
+    }
+
+    /**
      * <code>bool internal = 6;</code>
      * @return The internal.
      */
@@ -932,8 +1103,8 @@ public  final class HassmicCommand extends
             "internal_",
           };
           java.lang.String info =
-              "\u0000\u0006\u0001\u0000\u0001\u0006\u0006\u0000\u0000\u0000\u0001<\u0000\u0002:" +
-              "\u0000\u0003<\u0000\u0004<\u0000\u0005<\u0000\u0006\u0007";
+              "\u0000\u0007\u0001\u0000\u0001\u0007\u0007\u0000\u0000\u0000\u0001<\u0000\u0002:" +
+              "\u0000\u0003<\u0000\u0004<\u0000\u0005<\u0000\u0006\u0007\u0007\u023b\u0000";
           return newMessageInfo(DEFAULT_INSTANCE, info, objects);
       }
       // fall through

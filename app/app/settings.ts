@@ -226,6 +226,21 @@ class SavedSettingsManager_ {
     }
     return out;
   };
+
+  getWakewordSound = async (): Promise<string> => {
+    await this.waitForReady();
+    let out = this.settings.wakewordSound;
+    if (out === undefined) {
+      throw new Error('No wakeword sound set in settings!');
+    }
+    return out;
+  };
+
+  setWakewordSound = async (newSound: string) => {
+    await this.waitForReady();
+    this.settings.wakewordSound = newSound;
+    await this.write();
+  }
 }
 
 export const Settings = new SavedSettingsManager_();

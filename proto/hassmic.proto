@@ -18,6 +18,9 @@ message SavedSettings {
 
   // Device name
   string device_name = 4;
+
+  // Wakeword Sound
+  string wakeword_sound = 6;
 }
 
 // Information that the client sends about itself
@@ -455,6 +458,9 @@ message HassmicCommand {
 
     // Play, pause, stop, etc
     MediaPlayerCommand command = 5;
+
+    // Wakeword
+    string set_wakeword_sound = 7;
   }
   bool internal = 6;
 }

@@ -67,6 +67,9 @@ class SavedSettings(betterproto.Message):
     device_name: str = betterproto.string_field(4)
     """Device name"""
 
+    wakeword_sound: str = betterproto.string_field(6)
+    """Wakeword Sound"""
+
 
 @dataclass(eq=False, repr=False)
 class ClientInfo(betterproto.Message):
@@ -659,5 +662,8 @@ class HassmicCommand(betterproto.Message):
 
     command: "MediaPlayerCommand" = betterproto.message_field(5, group="msg")
     """Play, pause, stop, etc"""
+
+    set_wakeword_sound: str = betterproto.string_field(7, group="msg")
+    """Wakeword"""
 
     internal: bool = betterproto.bool_field(6)

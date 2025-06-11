@@ -84,4 +84,24 @@ public interface SavedSettingsOrBuilder extends
    */
   com.google.protobuf.ByteString
       getDeviceNameBytes();
+
+  /**
+   * <pre>
+   * Wakeword Sound
+   * </pre>
+   *
+   * <code>string wakeword_sound = 6;</code>
+   * @return The wakewordSound.
+   */
+  java.lang.String getWakewordSound();
+  /**
+   * <pre>
+   * Wakeword Sound
+   * </pre>
+   *
+   * <code>string wakeword_sound = 6;</code>
+   * @return The bytes for wakewordSound.
+   */
+  com.google.protobuf.ByteString
+      getWakewordSoundBytes();
 }

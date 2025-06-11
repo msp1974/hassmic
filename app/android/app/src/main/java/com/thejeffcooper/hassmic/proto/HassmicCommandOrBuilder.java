@@ -103,6 +103,35 @@ public interface HassmicCommandOrBuilder extends
   com.thejeffcooper.hassmic.proto.MediaPlayerCommand getCommand();
 
   /**
+   * <pre>
+   * Wakeword
+   * </pre>
+   *
+   * <code>string set_wakeword_sound = 7;</code>
+   * @return Whether the setWakewordSound field is set.
+   */
+  boolean hasSetWakewordSound();
+  /**
+   * <pre>
+   * Wakeword
+   * </pre>
+   *
+   * <code>string set_wakeword_sound = 7;</code>
+   * @return The setWakewordSound.
+   */
+  java.lang.String getSetWakewordSound();
+  /**
+   * <pre>
+   * Wakeword
+   * </pre>
+   *
+   * <code>string set_wakeword_sound = 7;</code>
+   * @return The bytes for setWakewordSound.
+   */
+  com.google.protobuf.ByteString
+      getSetWakewordSoundBytes();
+
+  /**
    * <code>bool internal = 6;</code>
    * @return The internal.
    */

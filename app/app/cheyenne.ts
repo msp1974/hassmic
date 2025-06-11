@@ -137,15 +137,14 @@ class CheyenneServer {
 
       socket.on('close', err => {
         Logger.info(`Closed connection`);
-        if (this._sock == socket) {
-          this._sock = null;
-        }
+        this._sock = null;
         this._setConnectionState(false);
       });
 
       socket.on('timeout', () => {
         Logger.info('Socket timed out');
         socket.destroy();
+        this._sock = null;
         this._setConnectionState(false);
       });
 
@@ -213,6 +212,12 @@ class CheyenneServer {
             `Got "${m.msg.oneofKind}" HassmicCommand; passing it to native code`,
           );
           NativeManager.handleHassmicCommand(m);
+          break;
+        case 'setWakewordSound':
+          Logger.info('Got set_wakeword_sound message');
+          const wakeword: string = m.msg.setWakewordSound;
+          Logger.info(`Setting wakeword sound to ${wakeword}`);
+          Settings.setWakewordSound(wakeword)
           break;
         default:
           Logger.warning(`Got unknown message type '${m.msg.oneofKind}'`);

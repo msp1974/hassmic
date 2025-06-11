@@ -22,6 +22,7 @@
     "react-native-microphone-stream": "^1.0.3",
     "react-native-network-info": "^5.2.1",
     "react-native-pcm-audio": "github:jeffc/react-native-pcm-audio",
+    "react-native-sound-player": "^0.14.5",
     "react-native-tcp-socket": "^6.2.0",
     "react-native-uuid": "^2.0.3",
     "react-native-zeroconf": "^0.13.8",
