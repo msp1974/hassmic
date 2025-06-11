@@ -15,6 +15,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers.start import async_at_started
 
 from .connection_manager import ConnectionManager
 from .exceptions import BadHassMicClientInfoException, BadMessageException
@@ -87,7 +88,9 @@ class HassMic:
             connection_state_callback=self._handle_connection_state_change,
         )
 
-        self._connection_manager.run()
+        # Start the connection manager after HA has finished start up
+        # To ensuire entities are created to handle connection messages from device.
+        async_at_started(hass, self._connection_manager.run())
 
     def register_entity(self, ent: Entity):
         """Add an entity to the list of entities generated for this hassmic."""
@@ -197,7 +200,7 @@ class HassMic:
 
             case _:
                 _LOGGER.warning(
-                    "Got an unknown message from " "%s:%d. Ignoring it.",
+                    "Got an unknown message from %s:%d. Ignoring it.",
                     self._host,
                     self._port,
                 )
