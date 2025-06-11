@@ -3,26 +3,26 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
+
 import betterproto
 
 from homeassistant.components import media_source
-
+from homeassistant.components.assist_pipeline.pipeline import PipelineEventType
 from homeassistant.components.media_player import (
     ENTITY_ID_FORMAT,
+    BrowseMedia,
+    MediaPlayerDeviceClass,
     MediaPlayerEnqueue,
     MediaPlayerEntity,
     MediaPlayerEntityDescription,
-    MediaPlayerDeviceClass,
     MediaPlayerEntityFeature,
     MediaPlayerState,
+    async_process_play_media_url,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.network import NoURLAvailableError, get_url
-from homeassistant.components.assist_pipeline.pipeline import (
-    PipelineEvent,
-    PipelineEventType,
-)
 
 from .. import util
 from ..proto import hassmic as proto
@@ -260,7 +260,11 @@ class Player(MediaPlayerEntity):
                         path,
                         urlbase,
                     )
-            case PipelineEventType.WAKE_WORD_END | PipelineEventType.STT_START | PipelineEventType.STT_VAD_START:
+            case (
+                PipelineEventType.WAKE_WORD_END
+                | PipelineEventType.STT_START
+                | PipelineEventType.STT_VAD_START
+            ):
                 # These pipeline states indicate that we should stop,
                 # ~~collaborate~~ and listen
                 if (
@@ -273,7 +277,11 @@ class Player(MediaPlayerEntity):
                     _LOGGER.debug("heard wakeword; pausing playback")
                     self._paused_for_mic = True
                     self.media_pause()
-            case PipelineEventType.TTS_END | PipelineEventType.ERROR | PipelineEventType.RUN_END:
+            case (
+                PipelineEventType.TTS_END
+                | PipelineEventType.ERROR
+                | PipelineEventType.RUN_END
+            ):
                 # Don't start playing while intent processing and STT start, but
                 # if we get any other pipeline state, we're good to resume
                 # playing
