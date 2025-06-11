@@ -90,7 +90,11 @@ class HassMic:
 
         # Start the connection manager after HA has finished start up
         # To ensuire entities are created to handle connection messages from device.
-        async_at_started(hass, self._connection_manager.run())
+        async_at_started(hass, self.async_start_connection_manager)
+
+    async def async_start_connection_manager(self, *args):
+        """Start the connection manager."""
+        self._connection_manager.run()
 
     def register_entity(self, ent: Entity):
         """Add an entity to the list of entities generated for this hassmic."""
