@@ -331,8 +331,8 @@ class ClientHandler {
   private _writeBuffer: any = [];
   private _activePCMStream: number | null = null;
   private _pipelineRunning: boolean = false;
-  private _audioStartTimestamp: number = 0;
-  private _pingEvent: number = 0;
+  private _wakewordDetectMode: boolean = false;
+  private _lastKeepAlive: number = 0;
   streamAudio: boolean = false;
 
   constructor(socket: TcpSocket.Socket) {
@@ -373,11 +373,6 @@ class ClientHandler {
             // If the write failed, we need to wait for the socket to drain
             let repeatTry = false;
             while (!ethis._socket.write(p.toBytes())) {
-              Logger.debug(
-                `Socket ${
-                  ethis._socket.remotePort
-                } write failed [${p.getType()}]`,
-              );
               yield;
               if (['audio-chunk', 'ping', 'pong'].indexOf(p.getType()) != -1) {
                 p = ethis._writeBuffer.shift();
@@ -421,7 +416,7 @@ class ClientHandler {
   };
 
   end = () => {
-    clearInterval(this._pingEvent);
+    this.AudioDoneEventListener.remove();
     if (this._socket) {
       Logger.debug(
         `Closing socket ${this._socket.remoteAddress}:${this._socket.remotePort}`,
@@ -432,7 +427,7 @@ class ClientHandler {
   };
 
   destroy = () => {
-    clearInterval(this._pingEvent);
+    this.AudioDoneEventListener.remove();
     if (this._socket) {
       Logger.debug(
         `Destroying socket ${this._socket.remoteAddress}:${this._socket.remotePort}`,
@@ -543,13 +538,12 @@ class ClientHandler {
 
         case 'detect':
           Logger.info('Starting (on-server) wakeword detection...');
+          this._wakewordDetectMode = true;
           DeviceEventEmitter.emit('wyoming-pipeline-start', {
             socket_id: this._socket?._id,
           });
           // Start streaming audio
-          setTimeout(() => {
-            this.setMicAudioStreaming(true);
-          }, 1000);
+          this.setMicAudioStreaming(true);
           break;
 
         case 'error':
@@ -561,6 +555,7 @@ class ClientHandler {
           break;
 
         case 'transcribe':
+          this._wakewordDetectMode = false;
           break;
 
         case 'voice-started':
@@ -583,59 +578,32 @@ class ClientHandler {
             mode: 'streaming',
             gain: 1,
           });
-          this.setMicAudioStreaming(false);
           Logger.info(`Audio stream id: ${this._activePCMStream}`);
+          this.setMicAudioStreaming(false);
           break;
 
         case 'audio-chunk':
-          Logger.info(`Playing audio chunk...[${p.getPayload().length} bytes]`);
-          // Set timestamp of first chunk
-          if (!this._audioStartTimestamp) {
-            this._audioStartTimestamp = Date.now();
-          }
-
           if (this._activePCMStream) {
             await PCMPlayer.writeAudioStream(
               this._activePCMStream,
               p.getPayload(),
             );
+
           } else {
             Logger.info('No active PCM stream!');
           }
+
+          // Keepalive activities
+          // These are not done on an interval as it does not fire reliably
+          // during audio streaming
+          this.audioStreamKeepAliveActivities();
           break;
 
         case 'audio-stop':
           Logger.info('Audio done.');
-          const audioDuration = p.getProp('timestamp');
           if (this._activePCMStream) {
             await PCMPlayer.stopAudioStream(this._activePCMStream);
-            this._activePCMStream = null;
           }
-
-          // If we have a timestamp, wait for the audio to finish playing before
-          // sending the played message. Otherwise, just send it after 0.5s.
-          // KNOWN ISSUE: Wyoming in HA does not send timestamp for annoucements.
-          let waitTime = 500;
-          if (audioDuration) {
-            waitTime =
-              audioDuration * 1000 - (Date.now() - this._audioStartTimestamp);
-          }
-          setTimeout(() => {
-            Logger.info(
-              `Waited for ${Math.round(
-                waitTime / 1000,
-              )} seconds before sending audio played message`,
-            );
-            resp = new WyomingPacket({
-              type: 'played',
-            });
-            Logger.debug(
-              `Sending audio played message to socket ${this._socket?.remotePort}`,
-            );
-            this.writePkt(resp);
-            this._audioStartTimestamp = 0;
-            this.setMicAudioStreaming(true);
-          }, waitTime);
           break;
 
         case 'ping':
@@ -651,10 +619,41 @@ class ClientHandler {
     }
   };
 
-  sendAudioData = (data: Uint8Array) => {
-    if (!this.streamAudio) {
-      return;
+  audioStreamKeepAliveActivities = () => {
+    // These activities are needed during audio streaming to prevent the
+    // server from thinking the connection is dead and giving a timeout error
+    if (this._lastKeepAlive + 2e3 < Date.now()) {
+
+      // Send ping if we haven't sent one in the last 2 seconds
+      let pkt = new WyomingPacket({
+          type: 'ping',
+      });
+      Logger.debug(`Sending keepalive ping to socket ${this._socket?.remotePort}`);
+      this.writePkt(pkt);
+
+      // If in wakeword detect mode and stream is active, send a keepalive audio chunk
+      if (!this.streamAudio && this._wakewordDetectMode) {
+        let keepAliveChunk = new Uint8Array(160); // 10ms of silence at 16kHz
+        Logger.debug(`Sending blank audio keepalive to socket ${this._socket?.remotePort}`);
+        this.sendAudioData(keepAliveChunk);
+      }
+
+      // On long audio streams, Cheyenne may not send a ping for a while, so
+      CheyenneSocket.sendMessage(
+        ClientMessage.create({
+          msg: {
+            oneofKind: 'ping',
+            ping: {},
+          },
+        }),
+      );
+
+      // Update the last keepalive time
+      this._lastKeepAlive = Date.now();
     }
+  } 
+
+  sendAudioData = (data: Uint8Array) => {
     if (!data || data.length == 0) {
       Logger.warning('Not sending empty audio data');
       return;
@@ -681,6 +680,27 @@ class ClientHandler {
       );
     }
   };
+
+  // Listen for audio done event from PCMPlaqyer and send a played message
+  // This gives an fairly accurate end to playing audio and ensures the Wyoming
+  // satellite knows when the audio has finished playing.
+  AudioDoneEventListener = DeviceEventEmitter.addListener('PCMAudio.AudioDone', (e)=>{
+    Logger.info(`Audio done event received: ${e}`);
+    let resp = new WyomingPacket({
+      type: 'played',
+    });
+    Logger.debug(
+      `Sending audio played message to socket ${this._socket?.remotePort}`,
+    );
+    this.writePkt(resp);
+    this._activePCMStream = null;
+
+    // if in detect mode, start streaming audio again
+    if (this._wakewordDetectMode) {
+      Logger.info('Restarting audio streaming after audio done');
+      this.setMicAudioStreaming(true);
+    }
+  })
 }
 
 // Class that actually defines a Wyoming protocol server. A single instance of
