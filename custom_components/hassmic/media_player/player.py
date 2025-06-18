@@ -99,6 +99,7 @@ class Player(MediaPlayerEntity):
     async def async_media_play(self):
         """Send a play command."""
         _LOGGER.info("Playing")
+        self.send_volume(self._attr_volume_level)
         self._hassmic.connection_manager.send_enqueue(
             proto.HassmicCommand(
                 command=proto.MediaPlayerCommand(
@@ -190,8 +191,8 @@ class Player(MediaPlayerEntity):
     def handle_connection_state_change(self, new_state: bool):
         """If the remote device just reconnected, remind it what settings it should have."""
         _LOGGER.debug("Connection state change")
-        if new_state and self._attr_volume_level is not None:
-            self.send_volume(self._attr_volume_level)
+        # if new_state and self._attr_volume_level is not None:
+        #    self.send_volume(self._attr_volume_level)
 
         self.available = new_state
         self.schedule_update_ha_state()
