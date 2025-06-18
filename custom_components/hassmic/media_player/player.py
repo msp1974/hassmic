@@ -3,29 +3,29 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
+
 import betterproto
 
 from homeassistant.components import media_source
-
+from homeassistant.components.assist_pipeline.pipeline import PipelineEventType
 from homeassistant.components.media_player import (
     ENTITY_ID_FORMAT,
+    BrowseMedia,
+    MediaPlayerDeviceClass,
     MediaPlayerEnqueue,
     MediaPlayerEntity,
     MediaPlayerEntityDescription,
-    MediaPlayerDeviceClass,
     MediaPlayerEntityFeature,
     MediaPlayerState,
+    async_process_play_media_url,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.network import NoURLAvailableError, get_url
-from homeassistant.components.assist_pipeline.pipeline import (
-    PipelineEvent,
-    PipelineEventType,
-)
 
-from .. import util
-from ..proto import hassmic as proto
+from .. import util  # noqa: TID252
+from ..proto import hassmic as proto  # noqa: TID252
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,6 +35,7 @@ class Player(MediaPlayerEntity):
 
     @property
     def entity_description(self) -> MediaPlayerEntityDescription:
+        """Return the entity description."""
         mped = MediaPlayerEntityDescription(key=self.unique_id)
         mped.device_class = MediaPlayerDeviceClass.SPEAKER
 
@@ -95,8 +96,8 @@ class Player(MediaPlayerEntity):
             )
         )
 
-    def media_play(self):
-        """Send a play command"""
+    async def async_media_play(self):
+        """Send a play command."""
         _LOGGER.info("Playing")
         self._hassmic.connection_manager.send_enqueue(
             proto.HassmicCommand(
@@ -108,8 +109,8 @@ class Player(MediaPlayerEntity):
             )
         )
 
-    def media_pause(self):
-        """Send a pause command"""
+    async def async_media_pause(self):
+        """Send a pause command."""
         _LOGGER.info("Pausing playback")
         self._hassmic.connection_manager.send_enqueue(
             proto.HassmicCommand(
@@ -121,8 +122,8 @@ class Player(MediaPlayerEntity):
             )
         )
 
-    def media_stop(self):
-        """Send a stop command"""
+    async def async_media_stop(self):
+        """Send a stop command."""
         _LOGGER.info("Stopping playback")
         self._hassmic.connection_manager.send_enqueue(
             proto.HassmicCommand(
@@ -134,13 +135,13 @@ class Player(MediaPlayerEntity):
             )
         )
 
-    def set_volume_level(self, volume: float) -> None:
+    async def async_set_volume_level(self, volume: float) -> None:
         """Set the volume level."""
         if volume is None:
             _LOGGER.debug("Requested volume is None")
             return
-        if not (0 <= volume and volume <= 1):
-            _LOGGER.error(f"{volume} is not between 0 and 1")
+        if not (volume >= 0 and volume <= 1):
+            _LOGGER.error("%f is not between 0 and 1", volume)
             return
         self.send_volume(volume)
 
@@ -196,6 +197,7 @@ class Player(MediaPlayerEntity):
         self.schedule_update_ha_state()
 
     def handle_saved_settings(self, ss: proto.SavedSettings):
+        """Handle saved settings from the client."""
         if ss.playback_volume is not None:
             if self._attr_volume_level is None:
                 _LOGGER.debug(
@@ -260,7 +262,11 @@ class Player(MediaPlayerEntity):
                         path,
                         urlbase,
                     )
-            case PipelineEventType.WAKE_WORD_END | PipelineEventType.STT_START | PipelineEventType.STT_VAD_START:
+            case (
+                PipelineEventType.WAKE_WORD_END
+                | PipelineEventType.STT_START
+                | PipelineEventType.STT_VAD_START
+            ):
                 # These pipeline states indicate that we should stop,
                 # ~~collaborate~~ and listen
                 if (
@@ -273,7 +279,11 @@ class Player(MediaPlayerEntity):
                     _LOGGER.debug("heard wakeword; pausing playback")
                     self._paused_for_mic = True
                     self.media_pause()
-            case PipelineEventType.TTS_END | PipelineEventType.ERROR | PipelineEventType.RUN_END:
+            case (
+                PipelineEventType.TTS_END
+                | PipelineEventType.ERROR
+                | PipelineEventType.RUN_END
+            ):
                 # Don't start playing while intent processing and STT start, but
                 # if we get any other pipeline state, we're good to resume
                 # playing
