@@ -15,6 +15,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers.start import async_at_started
 
 from .connection_manager import ConnectionManager
 from .exceptions import BadHassMicClientInfoException, BadMessageException
@@ -74,15 +75,20 @@ class HassMic:
 
         self._host = entry.data.get("hostname")
         self._port = entry.data.get("port")
+        self._connection_manager: ConnectionManager | None = None
 
         # track the entities created alongside this hassmic
         self._entities = []
 
+        async_at_started(hass, self.async_init_connection)
+
+    async def async_init_connection(self, *args):
+        """Initialise the connection manager."""
         self._connection_manager = ConnectionManager(
             host=self._host,
             port=self._port,
-            hass=hass,
-            config_entry=entry,
+            hass=self._hass,
+            config_entry=self._configentry,
             recv_fn=self.handle_incoming_message,
             connection_state_callback=self._handle_connection_state_change,
         )
@@ -190,6 +196,7 @@ class HassMic:
                 self._handle_client_event(val)
 
             case "saved_settings":
+                _LOGGER.error("Got saved settings from client: %s", repr(val))
                 self._handle_saved_settings(val)
 
             case "ping":
@@ -197,7 +204,7 @@ class HassMic:
 
             case _:
                 _LOGGER.warning(
-                    "Got an unknown message from " "%s:%d. Ignoring it.",
+                    "Got an unknown message from %s:%d. Ignoring it.",
                     self._host,
                     self._port,
                 )
