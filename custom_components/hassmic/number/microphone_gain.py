@@ -80,8 +80,8 @@ class MicrophoneGain(NumberEntity):
     def handle_connection_state_change(self, new_state: bool):
         """If the remote device just reconnected, remind it what settings it should have."""
         _LOGGER.debug("Connection state change")
-        if new_state and self._attr_native_value is not None:
-            self.send_gain(self._attr_native_value)
+        # if new_state and self._attr_native_value is not None:
+        #    self.send_gain(self._attr_native_value)
 
         self.available = new_state
         self.schedule_update_ha_state()
