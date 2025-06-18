@@ -499,7 +499,7 @@ export class ClientHandler {
   };
 
   playSound(wwsound: string | any) {
-    const callback = (error: any, sound: any) => {
+    const callback = (error: any, sound: Sound) => {
       if (error) {
         Logger.debug('Error loading sound: ' + error);
         return;
@@ -514,6 +514,7 @@ export class ClientHandler {
     if (!wwsound || wwsound === 'None') {
       return;
     }
+    Sound.setCategory('Playback', true);
     const sound = new Sound(wwsound, error => callback(error, sound));
   }
 
