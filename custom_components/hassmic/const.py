@@ -7,10 +7,11 @@ DOMAIN = "hassmic"
 
 # The platforms this integration provides
 PLATFORMS = [
-    Platform.SENSOR,
-    Platform.SWITCH,
     Platform.MEDIA_PLAYER,
     Platform.NUMBER,
+    Platform.SELECT,
+    Platform.SENSOR,
+    Platform.SWITCH,
 ]
 
 # Possible states for sensors

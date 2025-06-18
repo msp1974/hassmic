@@ -1,26 +1,20 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {AppRegistry} from 'react-native';
-import {Buffer} from 'buffer';
 import {CheyenneSocket} from './cheyenne';
 import {HMLogger} from './logger';
 import {NativeManager} from './nativemgr';
-import {PermissionsAndroid} from 'react-native';
 import {Settings} from './settings';
-import {STORAGE_KEY_RUN_BACKGROUND_TASK, AUDIO_INFO} from './constants';
+import {STORAGE_KEY_RUN_BACKGROUND_TASK} from './constants';
 import {WyomingServer} from './wyoming';
 import {ZeroconfManager} from './zeroconf';
-
-// note - patched version from
-// https://github.com/jeffc/react-native-live-audio-stream
-import LiveAudioStream from 'react-native-live-audio-stream';
-
-const Logger = new HMLogger('backgroundtask.ts');
-
-const sleep = (delay: number) =>
-  new Promise(resolve => setTimeout(resolve, delay));
+import {MicAudio} from './mic';
 
 // Convenience type for a generic callback
 type CallbackType<T> = (s: T) => void;
+
+export type TaskStatus = {
+  enabled: boolean;
+  state: TaskState;
+};
 
 export enum TaskState {
   // no info
@@ -36,71 +30,64 @@ export enum TaskState {
   STOPPED,
 }
 
+const Logger = new HMLogger('backgroundtask.ts');
+
 class BackgroundTaskManager_ {
-  // track the task state
-  private taskState: TaskState = TaskState.UNKNOWN;
-
-  // convenience function: sets the state and calls the callback
-  private setState = (s: TaskState) => {
-    this.taskState = s;
-    this.taskStateCallback(s);
-  };
-
+  // manage the background task
+  private _isTaskEnabled: boolean = false;
+  private _taskState: TaskState = TaskState.UNKNOWN;
   // callback for when the task state changes
-  private taskStateCallback: CallbackType<TaskState> = (s: TaskState) => {};
+  private _taskStatusCallback: CallbackType<TaskStatus> = status => {};
 
   // callback setter
-  // calls callback immediately with current state when set
-  setTaskStateCallback = (f: CallbackType<TaskState> | null) => {
+  setTaskStateCallback = (f: CallbackType<TaskStatus> | null) => {
     if (f) {
-      this.taskStateCallback = f;
+      this._taskStatusCallback = f;
     } else {
-      this.taskStateCallback = (s: TaskState) => {};
+      this._taskStatusCallback = (status: TaskStatus) => {};
+    }
+  };
+
+  private _notifyStatusChange = (): void => {
+    this._taskStatusCallback({
+      enabled: this._isTaskEnabled,
+      state: this._taskState,
+    });
+  };
+
+  private _setTaskState = (state: TaskState) => {
+    if (this._taskState != state) {
+      this._taskState = state;
+      this._notifyStatusChange();
     }
   };
 
   // track enable state
-  private isEnabled: Promise<boolean> = new Promise<boolean>(
-    (resolve, fail) => {
-      (async () => {
-        let en_str: string = '';
-        try {
-          // keep the typechecker happy
-          let from_storage: string | number[] | null =
-            await AsyncStorage.getItem(STORAGE_KEY_RUN_BACKGROUND_TASK);
-          if (from_storage) {
-            en_str = from_storage?.toString();
-          }
-        } catch (e) {
-          Logger.error(`Error getting task enable state: ${e}`);
-          fail(e);
+  isEnabled: Promise<boolean> = new Promise<boolean>((resolve, fail) => {
+    (async () => {
+      let en_str: string = '';
+      try {
+        // keep the typechecker happy
+        let from_storage: string | number[] | null = await AsyncStorage.getItem(
+          STORAGE_KEY_RUN_BACKGROUND_TASK,
+        );
+        if (from_storage) {
+          en_str = from_storage?.toString();
         }
+      } catch (e) {
+        Logger.error(`Error getting task enable state: ${e}`);
+        fail(e);
+      }
 
-        let en: boolean = en_str === 'true';
-        if (en_str === null) {
-          Logger.debug('No enable state found. Setting to false.');
-          en = false;
-        }
+      let en: boolean = en_str === 'true';
+      if (en_str === null) {
+        Logger.debug('No enable state found. Setting to false.');
+        en = false;
+      }
 
-        resolve(en);
-      })();
-    },
-  );
-
-  // callback for when the enable state is changed or set
-  private enableStateCallback: CallbackType<boolean> = (b: boolean) => {};
-
-  // callback setter
-  // once enable state is known, calls callback
-  setEnableStateCallback = (f: CallbackType<boolean> | null) => {
-    if (f) {
-      this.enableStateCallback = f;
-    } else {
-      this.enableStateCallback = (s: boolean) => {};
-    }
-
-    this.isEnabled.then(this.enableStateCallback);
-  };
+      resolve(en);
+    })();
+  });
 
   // enable or disable the task
   setEnabled = (enable: boolean) => {
@@ -113,14 +100,15 @@ class BackgroundTaskManager_ {
       } catch (e) {
         Logger.error(`Error saving enable state: ${e}`);
       }
+      this._isTaskEnabled = enable;
       this.isEnabled = new Promise<boolean>(resolve => resolve(enable));
-      this.enableStateCallback(enable);
+      this._notifyStatusChange();
     })().then(() => {});
   };
 
   // actually run the task
   run_fn = async (taskData: any) => {
-    if (this.taskState == TaskState.RUNNING) {
+    if (this._taskState == TaskState.RUNNING) {
       Logger.error('Background task is already running; not starting again!');
       return;
     }
@@ -132,7 +120,7 @@ class BackgroundTaskManager_ {
 
     if (!shouldRun) {
       Logger.info('Not running background task; is disabled');
-      this.setState(TaskState.STOPPED);
+      this._setTaskState(TaskState.STOPPED);
       NativeManager.killService();
       return;
     }
@@ -141,6 +129,12 @@ class BackgroundTaskManager_ {
     const shouldStop = new Promise<void>(resolve => {
       this.stop_fn = resolve;
     });
+
+    if (!(await MicAudio.checkPermissions())) {
+      Logger.error('no permission; bailing');
+      this._setTaskState(TaskState.FAILED);
+      return;
+    }
     // native event listeners
     await CheyenneSocket.startServer();
     Logger.info('Started cheyenne server');
@@ -149,45 +143,20 @@ class BackgroundTaskManager_ {
     Logger.info('Started wyoming server');
 
     await ZeroconfManager.StartZeroconf();
-    const ok = await PermissionsAndroid.check(
-      PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-    );
-    if (!ok) {
-      Logger.error('no permission; bailing');
-      this.setState(TaskState.FAILED);
-      return;
-    }
-    Logger.info('permissions okay, starting stream');
-    LiveAudioStream.init({
-      sampleRate: AUDIO_INFO.rate,
-      channels: AUDIO_INFO.channels,
-      bitsPerSample: AUDIO_INFO.width * 8,
-      audioSource: AUDIO_INFO.source,
-      wavFile: '', // to make tsc happy; this isn't used anywhere
-    });
 
-    // @ts-ignore: This error is some weird interaction between TS and Java
-    LiveAudioStream.on('RNLiveAudioStream.data', data => {
-      if (typeof data == 'object') {
-        Logger.warning(`Can't process: ${JSON.stringify(data)}`);
-        return;
-      }
-      const chunk = Buffer.from(data, 'base64');
-      WyomingServer.sendAudioData(chunk);
-    });
-    LiveAudioStream.start();
-    Logger.info('stream started');
-    this.setState(TaskState.RUNNING);
+    await MicAudio.init();
+
+    this._setTaskState(TaskState.RUNNING);
 
     Logger.info('Background task running, awaiting stop signal');
     await shouldStop;
     Logger.info('Background task got stop signal, stopping');
-    LiveAudioStream.stop();
+    MicAudio.stop();
     await ZeroconfManager.StopZeroconf();
     await WyomingServer.stopServer();
     await CheyenneSocket.stopServer();
     NativeManager.killService();
-    this.setState(TaskState.STOPPED);
+    this._setTaskState(TaskState.STOPPED);
   };
 
   // stop_fun is set by run() to the resolver on a promise. run() then runs
@@ -196,6 +165,12 @@ class BackgroundTaskManager_ {
 
   // stop the current run by resolving the promise using stop_fn.
   stop = () => {
+    if (this._taskState != TaskState.RUNNING) {
+      Logger.warning(
+        'Called stop() on background task, but it is not running; ignoring',
+      );
+      return;
+    }
     if (this.stop_fn) {
       this.stop_fn();
     } else {
@@ -212,6 +187,10 @@ class BackgroundTaskManager_ {
 
   // start the task
   run = () => {
+    if (this._taskState == TaskState.RUNNING) {
+      Logger.error('Background task is already running; not starting again!');
+      return;
+    }
     NativeManager.runService();
   };
 }

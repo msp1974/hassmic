@@ -1,8 +1,7 @@
 // @ts-nocheck
-import {AppRegistry, Platform} from 'react-native';
+import {AppRegistry} from 'react-native';
 import Index from './app/main';
 import {BackgroundTaskManager} from './app/backgroundtask';
-import {NativeManager} from './app/nativemgr';
 import {name as appName} from './app.json';
 
 import TextEncoder from 'react-native-fast-encoder';

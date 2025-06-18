@@ -1,4 +1,4 @@
-"""Sensor platform for hassmic integration."""
+"""Selector platform for hassmic integration."""
 
 import logging
 
@@ -6,13 +6,9 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .stt import STT
-from .tts import TTS
+from .wakeword_sound import WakeWordSound
 
 _LOGGER = logging.getLogger(__name__)
-
-# All of the sensor types in hassmic
-ALL_SENSOR_TYPES = [STT, TTS]
 
 
 async def async_setup_entry(
@@ -20,11 +16,9 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Initialize hassmic config entry for sensors."""
+    """Initialize hassmic config entry for media players."""
 
-    async_add_entities(
-        [sensor_type(hass, config_entry) for sensor_type in ALL_SENSOR_TYPES]
-    )
+    async_add_entities([WakeWordSound(hass, config_entry)])
 
 
 # vim: set ts=4 sw=4:

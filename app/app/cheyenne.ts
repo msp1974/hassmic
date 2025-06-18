@@ -116,7 +116,11 @@ class CheyenneServer {
         } catch (e: any) {
           Logger.info(e.toString());
         }
-        await new Promise(resolve => setTimeout(resolve, 10 * 1e3));
+        await new Promise(resolve =>
+          setTimeout(() => {
+            resolve('result');
+          }, 10 * 1e3),
+        );
       }
       Logger.debug('done ping');
     })().then(() => {});
@@ -149,7 +153,7 @@ class CheyenneServer {
         this._setConnectionState(false);
       });
 
-      socket.on('data', (d: string | Buffer) => {
+      socket.on('data', d => {
         if (typeof d == 'string') {
           this._handleIncomingData(
             Uint8Array.from(Array.from(d).map(l => l.charCodeAt(0) || 0)),
@@ -207,7 +211,13 @@ class CheyenneServer {
           break;
         case 'setMicGain':
           Logger.info(`Got set_mic_gain message: ${m.msg.setMicGain}`);
-          Settings.setMicGain(m.msg.setMicGain);
+          await Settings.setMicGain(m.msg.setMicGain);
+          break;
+        case 'setWakewordSound':
+          Logger.info(
+            `Got set_wakeword_sound message: ${m.msg.setWakewordSound}`,
+          );
+          await Settings.setWakewordSound(m.msg.setWakewordSound);
           break;
         // Actions that need to be handled by native code
         case 'playAudio':

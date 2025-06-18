@@ -46,6 +46,12 @@ export interface SavedSettings {
      * @generated from protobuf field: optional float mic_gain = 5;
      */
     micGain?: number;
+    /**
+     * Wakeword Sound
+     *
+     * @generated from protobuf field: string wakeword_sound = 6;
+     */
+    wakewordSound: string;
 }
 /**
  * Information that the client sends about itself
@@ -1408,10 +1414,18 @@ export interface HassmicCommand {
          */
         setMicGain: number;
     } | {
+        oneofKind: "setWakewordSound";
+        /**
+         * Wakeword
+         *
+         * @generated from protobuf field: string set_wakeword_sound = 7;
+         */
+        setWakewordSound: string;
+    } | {
         oneofKind: undefined;
     };
     /**
-     * @generated from protobuf field: bool internal = 7;
+     * @generated from protobuf field: bool internal = 8;
      */
     internal: boolean;
 }
@@ -1494,13 +1508,15 @@ class SavedSettings$Type extends MessageType<SavedSettings> {
             { no: 2, name: "playback_volume", kind: "scalar", opt: true, T: 2 /*ScalarType.FLOAT*/ },
             { no: 3, name: "hassmic_uuid", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 4, name: "device_name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 5, name: "mic_gain", kind: "scalar", opt: true, T: 2 /*ScalarType.FLOAT*/ }
+            { no: 5, name: "mic_gain", kind: "scalar", opt: true, T: 2 /*ScalarType.FLOAT*/ },
+            { no: 6, name: "wakeword_sound", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<SavedSettings>): SavedSettings {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.hassmicUuid = "";
         message.deviceName = "";
+        message.wakewordSound = "";
         if (value !== undefined)
             reflectionMergePartial<SavedSettings>(this, message, value);
         return message;
@@ -1524,6 +1540,9 @@ class SavedSettings$Type extends MessageType<SavedSettings> {
                     break;
                 case /* optional float mic_gain */ 5:
                     message.micGain = reader.float();
+                    break;
+                case /* string wakeword_sound */ 6:
+                    message.wakewordSound = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1552,6 +1571,9 @@ class SavedSettings$Type extends MessageType<SavedSettings> {
         /* optional float mic_gain = 5; */
         if (message.micGain !== undefined)
             writer.tag(5, WireType.Bit32).float(message.micGain);
+        /* string wakeword_sound = 6; */
+        if (message.wakewordSound !== "")
+            writer.tag(6, WireType.LengthDelimited).string(message.wakewordSound);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -5747,7 +5769,8 @@ class HassmicCommand$Type extends MessageType<HassmicCommand> {
             { no: 4, name: "set_player_volume", kind: "message", oneof: "msg", T: () => MediaPlayerVolume },
             { no: 5, name: "command", kind: "message", oneof: "msg", T: () => MediaPlayerCommand },
             { no: 6, name: "set_mic_gain", kind: "scalar", oneof: "msg", T: 2 /*ScalarType.FLOAT*/ },
-            { no: 7, name: "internal", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 7, name: "set_wakeword_sound", kind: "scalar", oneof: "msg", T: 9 /*ScalarType.STRING*/ },
+            { no: 8, name: "internal", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<HassmicCommand>): HassmicCommand {
@@ -5799,7 +5822,13 @@ class HassmicCommand$Type extends MessageType<HassmicCommand> {
                         setMicGain: reader.float()
                     };
                     break;
-                case /* bool internal */ 7:
+                case /* string set_wakeword_sound */ 7:
+                    message.msg = {
+                        oneofKind: "setWakewordSound",
+                        setWakewordSound: reader.string()
+                    };
+                    break;
+                case /* bool internal */ 8:
                     message.internal = reader.bool();
                     break;
                 default:
@@ -5832,9 +5861,12 @@ class HassmicCommand$Type extends MessageType<HassmicCommand> {
         /* float set_mic_gain = 6; */
         if (message.msg.oneofKind === "setMicGain")
             writer.tag(6, WireType.Bit32).float(message.msg.setMicGain);
-        /* bool internal = 7; */
+        /* string set_wakeword_sound = 7; */
+        if (message.msg.oneofKind === "setWakewordSound")
+            writer.tag(7, WireType.LengthDelimited).string(message.msg.setWakewordSound);
+        /* bool internal = 8; */
         if (message.internal !== false)
-            writer.tag(7, WireType.Varint).bool(message.internal);
+            writer.tag(8, WireType.Varint).bool(message.internal);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

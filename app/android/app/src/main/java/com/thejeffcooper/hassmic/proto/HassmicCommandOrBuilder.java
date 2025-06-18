@@ -122,7 +122,36 @@ public interface HassmicCommandOrBuilder extends
   float getSetMicGain();
 
   /**
-   * <code>bool internal = 7;</code>
+   * <pre>
+   * Wakeword
+   * </pre>
+   *
+   * <code>string set_wakeword_sound = 7;</code>
+   * @return Whether the setWakewordSound field is set.
+   */
+  boolean hasSetWakewordSound();
+  /**
+   * <pre>
+   * Wakeword
+   * </pre>
+   *
+   * <code>string set_wakeword_sound = 7;</code>
+   * @return The setWakewordSound.
+   */
+  java.lang.String getSetWakewordSound();
+  /**
+   * <pre>
+   * Wakeword
+   * </pre>
+   *
+   * <code>string set_wakeword_sound = 7;</code>
+   * @return The bytes for setWakewordSound.
+   */
+  com.google.protobuf.ByteString
+      getSetWakewordSoundBytes();
+
+  /**
+   * <code>bool internal = 8;</code>
    * @return The internal.
    */
   boolean getInternal();

@@ -36,7 +36,7 @@ class AnnounceVolume(NumberEntity):
         self._attr_native_max_value = 1
         self._attr_native_step = 0.01
 
-    def set_native_value(self, volume: float) -> None:
+    async def async_set_native_value(self, volume: float) -> None:
         """Set the volume level."""
         if volume is None:
             _LOGGER.debug("Requested volume is None")
@@ -51,7 +51,6 @@ class AnnounceVolume(NumberEntity):
         (which, val) = betterproto.which_one_of(event, "event")
 
         match which:
-
             case "media_player_volume_change":
                 if val.player == proto.MediaPlayerId.ID_ANNOUNCE:
                     self._attr_native_value = val.volume

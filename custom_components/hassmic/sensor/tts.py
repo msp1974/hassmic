@@ -10,13 +10,13 @@ from . import base
 _LOGGER = logging.getLogger(__name__)
 
 
-class STT(base.SensorBase):
-    """Defines a sensor with the STT state."""
+class TTS(base.SensorBase):
+    """Defines a sensor with the TTS state."""
 
     @property
     def hassmic_entity_name(self):
         """Return the name of the hassmic entity."""
-        return "stt"
+        return "tts"
 
     @property
     def icon(self):
@@ -24,15 +24,15 @@ class STT(base.SensorBase):
         return "mdi:ear-hearing"
 
     def handle_client_event(self, event: ClientEvent):
-        """Handle a ClientEvent for STT."""
+        """Handle a ClientEvent for TTS."""
         (which, val) = betterproto.which_one_of(event, "event")
         if which == "wyoming_event":
             try:
                 (which, wevent) = betterproto.which_one_of(val, "event")
                 match which:
-                    case "transcript":
+                    case "synthesize":
                         txt = wevent.text
-                        _LOGGER.debug("Setting STT state to %s", txt)
+                        _LOGGER.debug("Setting TTS state to %s", txt)
                         self.native_value = (
                             txt if len(txt) <= 255 else (txt[:252] + "...").strip()
                         )

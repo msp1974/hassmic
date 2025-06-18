@@ -10,56 +10,30 @@ import {
   View,
 } from "react-native";
 import { APP_VERSION } from "./constants";
-import { BackgroundTaskManager, TaskState } from "./backgroundtask";
+import { BackgroundTaskManager, TaskState, TaskStatus } from "./backgroundtask";
 import { CheyenneSocket } from "./cheyenne";
 import { NetworkInfo } from "react-native-network-info";
-import { UUIDManager } from "./util";
 import { WyomingServer } from "./wyoming";
-import { ZeroconfManager } from "./zeroconf";
 import { Settings } from "./settings";
 import { useState, useEffect } from "react";
 import { SavedSettings } from "./proto/hassmic";
-
-// note - patched version from
-// https://github.com/jeffc/react-native-live-audio-stream
-import LiveAudioStream from "react-native-live-audio-stream";
-
-const Separator = () => (
-  <View
-    style={{
-      marginVertical: 8,
-      borderBottomColor: "#737373",
-      borderBottomWidth: StyleSheet.hairlineWidth,
-    }}
-  />
-);
+import { MicAudio } from "./mic";
 
 const ANDROID_VERSION: number = +Platform.Version;
 
 export default function Index() {
   const [hasAudioPermission, setHasAudioPermission] = useState(false);
-  const [hasNotificationPermission, setHasNotificationPermission] = useState<
-    boolean | null
-  >(false);
+  const [hasNotificationPermission, setHasNotificationPermission] = useState<boolean | null>(false);
   const [isCheyenneConnected, setIsCheyenneConnected] = useState(false);
   const [isWyomingConnected, setIsWyomingConnected] = useState(false);
-  const [localIP, setLocalIP] = useState<string | null>("");
   const [isBackgroundTaskEnabled, setBackgroundTaskEnabled] = useState(false);
-  const [backgroundTaskState, setBackgroundTaskState] = useState(
-    TaskState.UNKNOWN
-  );
+  const [backgroundTaskState, setBackgroundTaskState] = useState(TaskState.UNKNOWN);
+  const [localIP, setLocalIP] = useState<string | null>("");
   const [uuid, setUUID] = useState("");
   const [micGain, setMicGain] = useState(1);
+  const [wakewordSound, setWakewordSound] = useState("");
 
-  // check audio permission silently
-  const checkAudioPermission = async (): Promise<boolean> => {
-    const audio_ok = await PermissionsAndroid.check(
-      PermissionsAndroid.PERMISSIONS.RECORD_AUDIO
-    );
-    setHasAudioPermission(audio_ok);
-    return audio_ok;
-  };
-
+  
   // check notification permission silently
   const checkNotificationPermission = async (): Promise<boolean | null> => {
     if (ANDROID_VERSION < 33) {
@@ -96,23 +70,10 @@ export default function Index() {
     console.log(`Notify permission: ${notif_ok}`);
   };
 
-  const stopStream = async () => {
-    LiveAudioStream.stop();
-  };
-
-  const bgSwitchChanged = async (newValue: boolean) => {
-    console.log(`Background switch changed: ${newValue}`);
-    BackgroundTaskManager.setEnabled(newValue);
-    if (newValue) {
-      await BackgroundTaskManager.run();
-    } else {
-      BackgroundTaskManager.stop();
-    }
-  };
-
   const settingsUpdated = async (newSettings: SavedSettings) => {
     setUUID(newSettings.hassmicUuid);
     setMicGain(newSettings.micGain || 1);
+    setWakewordSound(newSettings.wakewordSound || "");
   };
 
   // useEffect(..., []) means this code will be called once on component mount
@@ -120,25 +81,44 @@ export default function Index() {
   useEffect(() => {
     CheyenneSocket.setConnectionStateCallback(setIsCheyenneConnected);
     WyomingServer.setConnectionStateCallback(setIsWyomingConnected);
+
     NetworkInfo.getIPV4Address().then(setLocalIP);
-    //UUIDManager.getUUID().then(setUUID);
+    Settings.getHMUUID().then(setUUID);
+    BackgroundTaskManager.isEnabled.then(setBackgroundTaskEnabled);
+
     Settings.registerSettingsChangedCallback(settingsUpdated);
 
     // kill any existing instance of the background task (ie, task running even
     // though the app was killed)
     BackgroundTaskManager.kill();
 
-    BackgroundTaskManager.setEnableStateCallback(setBackgroundTaskEnabled);
-    BackgroundTaskManager.setTaskStateCallback(setBackgroundTaskState);
+    BackgroundTaskManager.setTaskStateCallback((status: TaskStatus) => {
+      if (status.enabled !== isBackgroundTaskEnabled) {
+        setBackgroundTaskEnabled(status.enabled);
+      }
+      if (status.state !== backgroundTaskState) {
+        setBackgroundTaskState(status.state);
+      }
+    });
 
+    
     // checkAudioPermission and checkNotificationPermission should set their
     // state state values, but in useEffect(..., []) that doesn't work. Using
     // .then() solves that problem.
-    checkAudioPermission().then((ok) => {
+    MicAudio.checkPermissions().then((ok) => {
       setHasAudioPermission(ok);
     });
     checkNotificationPermission().then((ok) => {
       setHasNotificationPermission(ok);
+    });
+
+
+    // Inititiate mic gain and wakeword sound from settings on startup
+    Settings.getMicGain().then((gain) => {
+      setMicGain(gain);
+    });
+    Settings.getWakewordSound().then((sound) => {
+      setWakewordSound(sound);
     });
 
   }, []);
@@ -146,15 +126,21 @@ export default function Index() {
   // when background task is toggled on or off, start or stop it accordingly.
   useEffect(() => {
     if (isBackgroundTaskEnabled) {
-      if (backgroundTaskState != TaskState.RUNNING) {
-        BackgroundTaskManager.run();
-      }
+      BackgroundTaskManager.run();
     } else {
-      if (backgroundTaskState == TaskState.RUNNING) {
-        BackgroundTaskManager.stop();
-      }
+      BackgroundTaskManager.stop();
     }
   }, [isBackgroundTaskEnabled]);
+
+  const Separator = () => (
+    <View
+      style={{
+        marginVertical: 8,
+        borderBottomColor: "#737373",
+        borderBottomWidth: StyleSheet.hairlineWidth,
+      }}
+    />
+  );
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -207,7 +193,7 @@ export default function Index() {
               : "not running"}
           </Text>
           <Text>Local IP: {localIP}</Text>
-          <Text>Device Unique ID: {uuid}</Text>
+          <Text>Device Unique ID: {uuid.slice(0, 8)}</Text>
           <Text>Wyoming Connected: {isWyomingConnected ? "yes" : "no"}</Text>
           <Text>
             HassMic Integration Connected: {isCheyenneConnected ? "yes" : "no"}
@@ -226,8 +212,11 @@ export default function Index() {
           <Text>Version {APP_VERSION}</Text>
           <Separator />
           <Text>Microphone Gain: {micGain}</Text>
+          <Text>Wakeword Sound: {wakewordSound === ''? 'None':wakewordSound}</Text>
         </>
       </View>
     </SafeAreaView>
   );
+
+  
 }

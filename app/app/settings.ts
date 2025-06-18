@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Zeroconf from 'react-native-zeroconf';
 import uuid from 'react-native-uuid';
 import {Buffer} from 'buffer';
 import {HMLogger} from './logger';
@@ -234,7 +233,7 @@ class SavedSettingsManager_ {
       throw new Error('No mic gain set in settings!');
     }
     return out;
-  }
+  };
 
   setMicGain = async (newGain: number) => {
     await this.waitForReady();
@@ -244,7 +243,22 @@ class SavedSettingsManager_ {
     }
     this.settings.micGain = newGain;
     await this.write();
-  }
+  };
+
+  getWakewordSound = async (): Promise<string> => {
+    await this.waitForReady();
+    let out = this.settings.wakewordSound;
+    if (out === undefined) {
+      throw new Error('No wakeword sound set in settings!');
+    }
+    return out;
+  };
+
+  setWakewordSound = async (newSound: string) => {
+    await this.waitForReady();
+    this.settings.wakewordSound = newSound;
+    await this.write();
+  };
 }
 
 export const Settings = new SavedSettingsManager_();

@@ -18,6 +18,7 @@ public  final class SavedSettings extends
   private SavedSettings() {
     hassmicUuid_ = "";
     deviceName_ = "";
+    wakewordSound_ = "";
   }
   private int bitField0_;
   public static final int ANNOUNCE_VOLUME_FIELD_NUMBER = 1;
@@ -302,6 +303,73 @@ public  final class SavedSettings extends
   private void clearMicGain() {
     bitField0_ = (bitField0_ & ~0x00000004);
     micGain_ = 0F;
+  }
+
+  public static final int WAKEWORD_SOUND_FIELD_NUMBER = 6;
+  private java.lang.String wakewordSound_;
+  /**
+   * <pre>
+   * Wakeword Sound
+   * </pre>
+   *
+   * <code>string wakeword_sound = 6;</code>
+   * @return The wakewordSound.
+   */
+  @java.lang.Override
+  public java.lang.String getWakewordSound() {
+    return wakewordSound_;
+  }
+  /**
+   * <pre>
+   * Wakeword Sound
+   * </pre>
+   *
+   * <code>string wakeword_sound = 6;</code>
+   * @return The bytes for wakewordSound.
+   */
+  @java.lang.Override
+  public com.google.protobuf.ByteString
+      getWakewordSoundBytes() {
+    return com.google.protobuf.ByteString.copyFromUtf8(wakewordSound_);
+  }
+  /**
+   * <pre>
+   * Wakeword Sound
+   * </pre>
+   *
+   * <code>string wakeword_sound = 6;</code>
+   * @param value The wakewordSound to set.
+   */
+  private void setWakewordSound(
+      java.lang.String value) {
+    java.lang.Class<?> valueClass = value.getClass();
+  
+    wakewordSound_ = value;
+  }
+  /**
+   * <pre>
+   * Wakeword Sound
+   * </pre>
+   *
+   * <code>string wakeword_sound = 6;</code>
+   */
+  private void clearWakewordSound() {
+
+    wakewordSound_ = getDefaultInstance().getWakewordSound();
+  }
+  /**
+   * <pre>
+   * Wakeword Sound
+   * </pre>
+   *
+   * <code>string wakeword_sound = 6;</code>
+   * @param value The bytes for wakewordSound to set.
+   */
+  private void setWakewordSoundBytes(
+      com.google.protobuf.ByteString value) {
+    checkByteStringIsUtf8(value);
+    wakewordSound_ = value.toStringUtf8();
+
   }
 
   public static com.thejeffcooper.hassmic.proto.SavedSettings parseFrom(
@@ -697,6 +765,75 @@ public  final class SavedSettings extends
       return this;
     }
 
+    /**
+     * <pre>
+     * Wakeword Sound
+     * </pre>
+     *
+     * <code>string wakeword_sound = 6;</code>
+     * @return The wakewordSound.
+     */
+    @java.lang.Override
+    public java.lang.String getWakewordSound() {
+      return instance.getWakewordSound();
+    }
+    /**
+     * <pre>
+     * Wakeword Sound
+     * </pre>
+     *
+     * <code>string wakeword_sound = 6;</code>
+     * @return The bytes for wakewordSound.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getWakewordSoundBytes() {
+      return instance.getWakewordSoundBytes();
+    }
+    /**
+     * <pre>
+     * Wakeword Sound
+     * </pre>
+     *
+     * <code>string wakeword_sound = 6;</code>
+     * @param value The wakewordSound to set.
+     * @return This builder for chaining.
+     */
+    public Builder setWakewordSound(
+        java.lang.String value) {
+      copyOnWrite();
+      instance.setWakewordSound(value);
+      return this;
+    }
+    /**
+     * <pre>
+     * Wakeword Sound
+     * </pre>
+     *
+     * <code>string wakeword_sound = 6;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearWakewordSound() {
+      copyOnWrite();
+      instance.clearWakewordSound();
+      return this;
+    }
+    /**
+     * <pre>
+     * Wakeword Sound
+     * </pre>
+     *
+     * <code>string wakeword_sound = 6;</code>
+     * @param value The bytes for wakewordSound to set.
+     * @return This builder for chaining.
+     */
+    public Builder setWakewordSoundBytes(
+        com.google.protobuf.ByteString value) {
+      copyOnWrite();
+      instance.setWakewordSoundBytes(value);
+      return this;
+    }
+
     // @@protoc_insertion_point(builder_scope:hassmic.SavedSettings)
   }
   @java.lang.Override
@@ -719,10 +856,11 @@ public  final class SavedSettings extends
             "hassmicUuid_",
             "deviceName_",
             "micGain_",
+            "wakewordSound_",
           };
           java.lang.String info =
-              "\u0000\u0005\u0000\u0001\u0001\u0005\u0005\u0000\u0000\u0000\u0001\u1001\u0000\u0002" +
-              "\u1001\u0001\u0003\u0208\u0004\u0208\u0005\u1001\u0002";
+              "\u0000\u0006\u0000\u0001\u0001\u0006\u0006\u0000\u0000\u0000\u0001\u1001\u0000\u0002" +
+              "\u1001\u0001\u0003\u0208\u0004\u0208\u0005\u1001\u0002\u0006\u0208";
           return newMessageInfo(DEFAULT_INSTANCE, info, objects);
       }
       // fall through

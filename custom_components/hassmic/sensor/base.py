@@ -4,17 +4,14 @@ from __future__ import annotations
 
 import logging
 
-from homeassistant.components.assist_pipeline.pipeline import (
-    PipelineEvent,
-)
-from ..proto.hassmic import ClientEvent, betterproto
+from homeassistant.components.assist_pipeline.pipeline import PipelineEvent
 from homeassistant.components.sensor import ENTITY_ID_FORMAT, SensorEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import STATE_IDLE
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import STATE_UNKNOWN
 
-from .. import util
-from ..const import STATE_ERROR
+from .. import util  # noqa: TID252
+from ..proto.hassmic import ClientEvent  # noqa: TID252
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,17 +22,19 @@ class SensorBase(SensorEntity):
     All sensors should inherit from this class.
     """
 
-    _attr_native_value = STATE_IDLE
+    _attr_native_value = STATE_UNKNOWN
     _attr_should_poll = False
 
     @property
     def hassmic_entity_name(self):
+        """Return the name of the hassmic entity."""
         raise NotImplementedError(
             f"Class {type(self).__name__} has no hassmic_entity_name"
         )
 
     @property
     def icon(self):
+        """Return the icon for the sensor."""
         return "mdi:help"
 
     def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry) -> None:
@@ -49,12 +48,10 @@ class SensorBase(SensorEntity):
         self.schedule_update_ha_state()
 
     def handle_pipeline_event(self, event: PipelineEvent):
-        """Deprecated."""
-        pass
+        """Handle a PipelineEvent - deprecated."""
 
     def handle_client_event(self, event: ClientEvent):
         """Handle a ClientEvent."""
-        pass
 
 
 # vim: set ts=4 sw=4:

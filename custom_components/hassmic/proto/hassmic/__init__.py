@@ -70,6 +70,9 @@ class SavedSettings(betterproto.Message):
     mic_gain: Optional[float] = betterproto.float_field(5, optional=True)
     """MicGain"""
 
+    wakeword_sound: str = betterproto.string_field(6)
+    """Wakeword Sound"""
+
 
 @dataclass(eq=False, repr=False)
 class ClientInfo(betterproto.Message):
@@ -666,4 +669,7 @@ class HassmicCommand(betterproto.Message):
     set_mic_gain: float = betterproto.float_field(6, group="msg")
     """Set the microphone gain"""
 
-    internal: bool = betterproto.bool_field(7)
+    set_wakeword_sound: str = betterproto.string_field(7, group="msg")
+    """Wakeword"""
+
+    internal: bool = betterproto.bool_field(8)

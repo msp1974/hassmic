@@ -6,8 +6,7 @@ import logging
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import device_registry
-from homeassistant.helpers.entity import DeviceInfo, Entity
+from homeassistant.helpers import device_registry  # noqa: ICN001
 
 from . import const
 from .hassmic import HassMic
