@@ -196,7 +196,6 @@ class HassMic:
                 self._handle_client_event(val)
 
             case "saved_settings":
-                _LOGGER.error("Got saved settings from client: %s", repr(val))
                 self._handle_saved_settings(val)
 
             case "ping":
