@@ -99,7 +99,6 @@ class Player(MediaPlayerEntity):
     async def async_media_play(self):
         """Send a play command."""
         _LOGGER.info("Playing")
-        self.send_volume(self._attr_volume_level)
         self._hassmic.connection_manager.send_enqueue(
             proto.HassmicCommand(
                 command=proto.MediaPlayerCommand(
@@ -200,22 +199,13 @@ class Player(MediaPlayerEntity):
     def handle_saved_settings(self, ss: proto.SavedSettings):
         """Handle saved settings from the client."""
         if ss.playback_volume is not None:
-            if self._attr_volume_level is None:
-                _LOGGER.debug(
-                    "Setting playback volume to %f due to saved settings",
-                    ss.playback_volume,
-                )
-                self._attr_volume_level = ss.playback_volume
-                self.send_volume(ss.playback_volume)
-                self.schedule_update_ha_state()
-            else:
-                _LOGGER.warning(
-                    "Got saved settings from client, but volume is already set!"
-                )
-        else:
-            _LOGGER.warning(
-                "Got saved settings from client, but no playback_volume is specified!"
+            _LOGGER.debug(
+                "Setting playback volume to %f due to saved settings",
+                ss.playback_volume,
             )
+            self._attr_volume_level = ss.playback_volume
+            # self.send_volume(ss.playback_volume)
+            self.schedule_update_ha_state()
 
     def send_volume(self, vol):
         """Send the various media player settings to the remote."""

@@ -60,22 +60,12 @@ class MicrophoneGain(NumberEntity):
 
     def handle_saved_settings(self, ss: proto.SavedSettings):
         """Handle saved settings from the client."""
-        if ss.mic_gain is not None:
-            if self._attr_native_value is None:
-                _LOGGER.debug(
-                    "Setting microphone gain to %f due to saved settings",
-                    ss.mic_gain,
-                )
-                self._attr_native_value = ss.mic_gain
-                self.schedule_update_ha_state()
-            else:
-                _LOGGER.warning(
-                    "Got saved settings from client, but microphone gain is already set!"
-                )
-        else:
-            _LOGGER.warning(
-                "Got saved settings from client, but microphone gain is specified!"
-            )
+        _LOGGER.debug(
+            "Setting microphone gain to %f due to saved settings",
+            ss.mic_gain,
+        )
+        self._attr_native_value = ss.mic_gain
+        self.schedule_update_ha_state()
 
     def handle_connection_state_change(self, new_state: bool):
         """If the remote device just reconnected, remind it what settings it should have."""

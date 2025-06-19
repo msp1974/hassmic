@@ -31,11 +31,13 @@ class Microphone(base.SwitchBase):
         self._hassmic = config_entry.runtime_data
 
     async def async_turn_on(self, **kwargs) -> None:
+        """Turn the microphone on."""
         self._attr_is_on = True
         self.send_mic_mute_status()
         self.schedule_update_ha_state()
 
     async def async_turn_off(self, **kwargs) -> None:
+        """Turn the microphone off."""
         self._attr_is_on = False
         self.send_mic_mute_status()
         self.schedule_update_ha_state()

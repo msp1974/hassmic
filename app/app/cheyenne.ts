@@ -14,7 +14,9 @@ import {
   MediaPlayerId,
   Ping,
   HassmicCommand,
+  SavedSettings,
 } from './proto/hassmic';
+import {Volume} from './volume';
 
 const Logger = new HMLogger('cheyenne.ts');
 
@@ -37,6 +39,9 @@ class CheyenneServer {
   // Whether the mic should be muted
   private _mic_muted: boolean = false;
 
+  // Volume Managerr
+  private vm = Volume;
+
   setConnectionStateCallback = (cb: CallbackType<boolean>) => {
     this._connectionStateCallback = cb;
   };
@@ -56,6 +61,16 @@ class CheyenneServer {
       });
       Logger.debug(`Client message: ${ClientMessage.toJsonString(cm)}`);
       CheyenneSocket.sendMessage(cm);
+    });
+    Settings.registerSettingsChangedCallback(async (s: SavedSettings) => {
+      Logger.debug(`Sending changed settings: ${s}`);
+      let m = ClientMessage.create({
+        msg: {
+          oneofKind: 'savedSettings',
+          savedSettings: Settings.getSavedSettings(),
+        },
+      });
+      CheyenneSocket.sendMessage(m);
     });
   }
 
@@ -163,7 +178,7 @@ class CheyenneServer {
         }
       });
 
-      Logger.info(`Got connection`);
+      Logger.info(`Cheyenne got connection`);
       if (this._sock == null) {
         this._sock = socket;
         socket.setTimeout(60e3);
@@ -219,9 +234,20 @@ class CheyenneServer {
           );
           await Settings.setWakewordSound(m.msg.setWakewordSound);
           break;
+        case 'setPlayerVolume':
+          Logger.info(
+            `Got set_player_volume message: ${m.msg.setPlayerVolume}`,
+          );
+          if (m.msg.setPlayerVolume.player === MediaPlayerId.ID_ANNOUNCE) {
+            await Settings.setAnnounceVolume(m.msg.setPlayerVolume.volume);
+          }
+          if (m.msg.setPlayerVolume.player === MediaPlayerId.ID_PLAYBACK) {
+            await this.vm.setVolume(m.msg.setPlayerVolume.volume);
+          }
+          break;
+
         // Actions that need to be handled by native code
         case 'playAudio':
-        case 'setPlayerVolume':
         case 'command':
           Logger.debug(
             `Got "${m.msg.oneofKind}" HassmicCommand; passing it to native code`,
