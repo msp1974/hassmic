@@ -161,6 +161,7 @@ export class ClientHandler {
   private _wakewordDetectMode: boolean = false;
   private _lastKeepAlive: number = 0;
   private wakeword = null;
+  private _settingCb: () => void = () => {};
 
   constructor(socket: TcpSocket.Socket) {
     this._socket = socket;
@@ -191,12 +192,14 @@ export class ClientHandler {
     });
 
     // Handle ww sound change
-    Settings.registerSettingsChangedCallback(async (s: SavedSettings) => {
-      if (s.wakewordSound !== undefined) {
-        this.wakeword = this._getWakewordRequire(s.wakewordSound);
-        Logger.info(`Updated wakeword sound to ${s.wakewordSound}`);
-      }
-    });
+    this._settingCb = Settings.registerSettingsChangedCallback(
+      async (s: SavedSettings) => {
+        if (s.wakewordSound !== undefined) {
+          this.wakeword = this._getWakewordRequire(s.wakewordSound);
+          Logger.info(`Updated wakeword sound to ${s.wakewordSound}`);
+        }
+      },
+    );
   }
 
   private _getWakewordRequire(wakeword: string) {
@@ -274,8 +277,13 @@ export class ClientHandler {
     }
   };
 
-  end = () => {
+  terminateListeners = () => {
     this.AudioDoneEventListener.remove();
+    this._settingCb();
+  };
+
+  end = () => {
+    this.terminateListeners();
     if (this._socket) {
       Logger.debug(
         `Closing socket ${this._socket.remoteAddress}:${this._socket.remotePort}`,
@@ -286,7 +294,7 @@ export class ClientHandler {
   };
 
   destroy = () => {
-    this.AudioDoneEventListener.remove();
+    this.terminateListeners();
     if (this._socket) {
       Logger.debug(
         `Destroying socket ${this._socket.remoteAddress}:${this._socket.remotePort}`,

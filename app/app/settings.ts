@@ -2,8 +2,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import uuid from 'react-native-uuid';
 import {Buffer} from 'buffer';
 import {HMLogger} from './logger';
-import {STORAGE_KEY_SAVED_SETTINGS_PROTO, STORAGE_KEY_UUID} from './constants';
+import {
+  STORAGE_KEY_RUN_BACKGROUND_TASK,
+  STORAGE_KEY_SAVED_SETTINGS_PROTO,
+  STORAGE_KEY_UUID,
+} from './constants';
 import {SavedSettings} from './proto/hassmic';
+import {Volume} from './volume';
 
 const Logger = new HMLogger('settings.ts');
 
@@ -46,6 +51,15 @@ class SavedSettingsManager_ {
     cb: (s: SavedSettings) => Promise<void>,
   ) => {
     this.settingsChangedCallbacks.push(cb);
+    return this.unregisterSettingsChangedCallback.bind(this, cb);
+  };
+
+  unregisterSettingsChangedCallback = (
+    cb: (s: SavedSettings) => Promise<void>,
+  ) => {
+    this.settingsChangedCallbacks = this.settingsChangedCallbacks.filter(
+      c => c !== cb,
+    );
   };
 
   // adapted from https://www.jonmellman.com/posts/singleton-promises
